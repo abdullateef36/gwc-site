@@ -20,12 +20,12 @@ export default function Nav() {
         <li><Link href="/">HOME</Link></li>
         <li><Link href="/tournaments">TOURNAMENTS</Link></li>
         <li><Link href="/community">COMMUNITY</Link></li>
-        <li><Link href="/news">NEWS</Link></li>
+        {/* <li><Link href="/news">NEWS</Link></li> */}
         <li><Link href="/shop">SHOP</Link></li>
       </ul>
       <div className="flex items-center gap-3">
-        <Link href="/join" className="bg-(--gwc-red)] py-2 px-4 rounded text-sm font-semibold">JOIN GWC</Link>
+        <Link href="/join" className="bg-(--gwc-red) py-2 px-4 rounded text-sm font-semibold">JOIN GWC</Link>
       </div>
-    </nav>
+    </nav> 
   )
 }
