@@ -8,12 +8,14 @@ interface UserContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  displayName: string;
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
   loading: true,
   isAdmin: false,
+  displayName: "",
 });
 
 let authInitialized = false;
@@ -24,6 +26,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(cachedUser);
   const [loading, setLoading] = useState(!authInitialized);
   const [isAdmin, setIsAdmin] = useState(cachedIsAdmin);
+  const [displayName, setDisplayName] = useState(
+    () => typeof window !== "undefined" ? localStorage.getItem("displayName") || "" : ""
+  );
 
   const setupRef = useRef(false);
 
@@ -33,6 +38,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         queueMicrotask(() => {
           setUser(cachedUser);
           setIsAdmin(cachedIsAdmin);
+          setDisplayName(cachedUser?.displayName || "");
           setLoading(false);
         });
       }
@@ -57,7 +63,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       if (firebaseUser) {
         try {
-          const tokenResult = await firebaseUser.getIdTokenResult();
+          const tokenResult = await firebaseUser.getIdTokenResult(true);
           adminStatus = !!tokenResult.claims.admin;
 
           console.log("User UID:", firebaseUser.uid);
@@ -76,21 +82,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       queueMicrotask(() => {
         setUser(firebaseUser);
         setIsAdmin(adminStatus);
+        setDisplayName(firebaseUser?.displayName || "");
         setLoading(false);
         authInitialized = true;
       });
 
       if (firebaseUser) {
         localStorage.setItem("isAdmin", adminStatus.toString());
+        if (firebaseUser.displayName) {
+          localStorage.setItem("displayName", firebaseUser.displayName);
+        }
       } else {
         localStorage.removeItem("isAdmin");
+        localStorage.removeItem("displayName");
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  return <UserContext.Provider value={{ user, loading, isAdmin }}>{children}</UserContext.Provider>;
+  return <UserContext.Provider value={{ user, loading, isAdmin, displayName }}>{children}</UserContext.Provider>;
 }
 
 export function useUser() {

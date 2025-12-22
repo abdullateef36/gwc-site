@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
@@ -19,6 +19,23 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (!auth) {
+      console.error("Firebase auth is not initialized");
+      return;
+    }
+    
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is already logged in, redirect to home
+        router.push("/");
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [router]);
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,53 +55,96 @@ export default function SignupPage() {
       return;
     }
 
+    if (!name.trim()) {
+      setError("Please enter your name");
+      setLoading(false);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Please enter your email");
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (!auth || !db) {
-        setError("Service unavailable. Please try again.");
-        setLoading(false);
-        return;
+      if (!auth) {
+        throw new Error("Authentication service not available. Please try again later.");
       }
 
-      // Create user
+      if (!db) {
+        throw new Error("Database service not available. Please try again later.");
+      }
+
+      console.log("Creating user...");
+      
+      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
+      
+      console.log("User created:", userCredential.user.uid);
 
       // Update profile with name
       await updateProfile(userCredential.user, {
         displayName: name,
       });
+      
+      console.log("Profile updated");
 
       // Store user data in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
-        email: email,
-        displayName: name,
-        role: "user", // Default role
+        email: email.toLowerCase().trim(),
+        displayName: name.trim(),
+        role: "user",
         createdAt: new Date().toISOString(),
-        photoURL: null, // Profile photo can be added later
+        photoURL: null,
+        isAdmin: false,
       });
+      
+      console.log("Firestore document created");
 
-      router.push("/");
+      // Clear form
+      setEmail("");
+      setName("");
+      setPassword("");
+      setConfirmPassword("");
+
+      // Wait a moment for auth state to update
+      setTimeout(() => {
+        router.push("/");
+      }, 100);
+
     } catch (err: unknown) {
+      console.error("Signup error:", err);
+      
       if (err instanceof Error) {
-        if (err.message.includes("email-already-in-use")) {
-          setError("Email already in use");
-        } else if (err.message.includes("weak-password")) {
-          setError("Password is too weak");
-        } else if (err.message.includes("invalid-email")) {
-          setError("Invalid email address");
+        const errorMessage = err.message;
+        
+        if (errorMessage.includes("email-already-in-use")) {
+          setError("This email is already registered. Please use a different email or sign in.");
+        } else if (errorMessage.includes("weak-password")) {
+          setError("Password is too weak. Please use a stronger password.");
+        } else if (errorMessage.includes("invalid-email")) {
+          setError("Invalid email address. Please enter a valid email.");
+        } else if (errorMessage.includes("network-request-failed")) {
+          setError("Network error. Please check your internet connection.");
+        } else if (errorMessage.includes("auth/internal-error")) {
+          setError("Server error. Please try again later.");
+        } else if (errorMessage.includes("auth/too-many-requests")) {
+          setError("Too many attempts. Please try again later.");
         } else {
-          setError(err.message);
+          setError(`Signup failed: ${errorMessage}`);
         }
       } else {
-        setError("Something went wrong. Please try again.");
+        setError("An unexpected error occurred. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -114,8 +174,9 @@ export default function SignupPage() {
           >
             {/* Error Message */}
             {error && (
-              <div className="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 rounded-lg">
-                {error}
+              <div className="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 rounded-lg animate-fadeIn">
+                <p className="font-medium">Error:</p>
+                <p className="text-sm">{error}</p>
               </div>
             )}
 
@@ -131,7 +192,8 @@ export default function SignupPage() {
                   placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500"
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   required
                 />
               </div>
@@ -149,7 +211,8 @@ export default function SignupPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500"
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   required
                 />
               </div>
@@ -167,13 +230,15 @@ export default function SignupPage() {
                   placeholder="Create a strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500"
+                  disabled={loading}
+                  className="w-full pl-12 pr-12 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  disabled={loading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 disabled:opacity-50"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -192,13 +257,15 @@ export default function SignupPage() {
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500"
+                  disabled={loading}
+                  className="w-full pl-12 pr-12 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  disabled={loading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 disabled:opacity-50"
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>

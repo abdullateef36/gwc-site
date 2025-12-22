@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -33,11 +33,25 @@ export default function Nav() {
     localStorage.removeItem("authUser");
     localStorage.removeItem("userData");
     localStorage.removeItem("isAdmin");
+    localStorage.removeItem("displayName"); // remove cached display name
     router.push("/login");
   };
 
+  // Get display name from cached localStorage for instant UI
+  const displayName =
+    user?.displayName ||
+    (typeof window !== "undefined" ? localStorage.getItem("displayName") : "") ||
+    "GWC User";
+
+  // Cache display name when user is available
+  useEffect(() => {
+    if (user?.displayName) {
+      localStorage.setItem("displayName", user.displayName);
+    }
+  }, [user?.displayName]);
+
   return (
-    <nav className="w-full py-4 px-6 flex items-center justify-between border-b border-gray-800">
+    <nav className="relative w-full py-4 px-6 flex items-center justify-between border-b border-gray-800">
       {/* Logo */}
       <div className="flex items-center gap-3">
         <Image 
@@ -68,23 +82,25 @@ export default function Nav() {
 
       {/* User Info & Actions */}
       <div className="flex items-center gap-4">
-        {!loading && user && (
-          <>
-            {/* Desktop User Info */}
-            <div className="hidden md:flex items-center gap-3">
+        {/* Desktop User Info */}
+        <div className="hidden md:flex items-center gap-3">
+          {loading && !user ? (
+            // Skeleton loading placeholder
+            <div className="flex items-center gap-2 animate-pulse">
+              <div className="w-24 h-4 bg-gray-700 rounded" />
+              <div className="w-10 h-10 bg-gray-700 rounded-full" />
+            </div>
+          ) : user ? (
+            <>
               <div className="text-right">
-                <p className="font-semibold text-white">
-                  {user.displayName ?? "GWC User"}
-                </p>
+                <p className="font-semibold text-white">{displayName}</p>
                 <p className="text-xs text-gray-400">{user.email}</p>
               </div>
-              
-              {/* Profile Image - if available */}
               {user.photoURL ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gwc-red">
                   <Image
                     src={user.photoURL}
-                    alt={user.displayName || "User"}
+                    alt={displayName}
                     width={40}
                     height={40}
                     className="w-full h-full object-cover"
@@ -92,13 +108,14 @@ export default function Nav() {
                 </div>
               ) : (
                 <div className="w-10 h-10 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold">
-                  {user.displayName 
-                    ? user.displayName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
-                    : "GU"}
+                  {displayName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .substring(0, 2)}
                 </div>
               )}
-              
-              {/* Sign Out Button */}
               <button
                 onClick={handleLogout}
                 className="text-gray-400 hover:text-red-500 transition-colors p-2"
@@ -106,26 +123,26 @@ export default function Nav() {
               >
                 <LogOut size={18} />
               </button>
-            </div>
-            
-            {/* Mobile Menu Toggle */}
-            <button 
-              onClick={() => setMobileOpen(!mobileOpen)} 
-              className="md:hidden p-2"
+            </>
+          ) : (
+            // Not logged in
+            <Link 
+              href="/login" 
+              className="bg-gwc-red py-2 px-4 rounded text-sm font-semibold hover:bg-[#c10500] transition-colors"
             >
-              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </>
-        )}
+              SIGN UP
+            </Link>
+          )}
+        </div>
 
-        {/* Auth Links (when not logged in) */}
-        {!loading && !user && (
-          <Link 
-            href="/login" 
-            className="bg-gwc-red py-2 px-4 rounded text-sm font-semibold hover:bg-[#c10500] transition-colors"
+        {/* Mobile Menu Toggle */}
+        {user && (
+          <button 
+            onClick={() => setMobileOpen(!mobileOpen)} 
+            className="md:hidden p-2"
           >
-            SIGN UP
-          </Link>
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         )}
       </div>
 
@@ -138,7 +155,7 @@ export default function Nav() {
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gwc-red">
                 <Image
                   src={user.photoURL}
-                  alt={user.displayName || "User"}
+                  alt={displayName}
                   width={48}
                   height={48}
                   className="w-full h-full object-cover"
@@ -146,15 +163,16 @@ export default function Nav() {
               </div>
             ) : (
               <div className="w-12 h-12 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {user.displayName 
-                  ? user.displayName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
-                  : "GU"}
+                {displayName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .substring(0, 2)}
               </div>
             )}
             <div>
-              <p className="font-semibold text-white">
-                {user.displayName ?? "GWC User"}
-              </p>
+              <p className="font-semibold text-white">{displayName}</p>
               <p className="text-xs text-gray-400">{user.email}</p>
             </div>
           </div>
