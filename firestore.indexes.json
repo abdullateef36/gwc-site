@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "tournaments",
+      "queryScope": "Collection",
+      "fields": [
+        { "fieldPath": "status", "order": "Ascending" },
+        { "fieldPath": "startDate", "order": "Descending" }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "Collection",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "Descending" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

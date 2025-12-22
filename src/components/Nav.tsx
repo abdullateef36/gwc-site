@@ -23,7 +23,7 @@ export default function Nav() {
         <li><Link href="/shop">SHOP</Link></li>
       </ul>
       <div className="flex items-center gap-3">
-        <Link href="/join" className="bg-(--gwc-red) py-2 px-4 rounded text-sm font-semibold">JOIN GWC</Link>
+        <Link href="/login" className="bg-(--gwc-red) py-2 px-4 rounded text-sm font-semibold">Sign Up</Link>
       </div>
     </nav> 
   )

@@ -3,6 +3,8 @@
 @theme {
   --color-gwc-red: #E10600;
   --color-gwc-black: #0d0d0d;
+  --color-gwc-gray: #1a1a1a;
+  --color-gwc-light-gray: #333333;
   --color-background: var(--color-gwc-black);
   --color-foreground: white;
 }
@@ -14,4 +16,22 @@
 
 body {
   @apply bg-gwc-black text-white antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gwc-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gwc-red);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c10500;
 }
