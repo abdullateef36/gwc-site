@@ -5,7 +5,7 @@ import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User, Eye, EyeOff, Shield, User as UserIcon } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -14,8 +14,6 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [userType, setUserType] = useState<"user" | "admin">("user");
-  const [adminCode, setAdminCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,12 +38,6 @@ export default function SignupPage() {
       return;
     }
 
-    if (userType === "admin" && adminCode !== "GWC_ADMIN_2024") {
-      setError("Invalid admin code");
-      setLoading(false);
-      return;
-    }
-
     try {
       if (!auth || !db) {
         setError("Service unavailable. Please try again.");
@@ -60,22 +52,20 @@ export default function SignupPage() {
         password
       );
 
-      // Update profile
+      // Update profile with name
       await updateProfile(userCredential.user, {
         displayName: name,
       });
 
-      // Store user data in Firestore with role
+      // Store user data in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
         email: email,
         displayName: name,
-        role: userType,
+        role: "user", // Default role
         createdAt: new Date().toISOString(),
+        photoURL: null, // Profile photo can be added later
       });
-
-      // Store admin status in localStorage
-      localStorage.setItem("isAdmin", (userType === "admin").toString());
 
       router.push("/");
     } catch (err: unknown) {
@@ -214,64 +204,6 @@ export default function SignupPage() {
                 </button>
               </div>
             </div>
-
-            {/* User Type Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-300 block">
-                Account Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setUserType("user")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
-                    userType === "user"
-                      ? "border-gwc-red bg-red-900/20"
-                      : "border-gwc-light-gray bg-gwc-black hover:border-gray-500"
-                  }`}
-                >
-                  <UserIcon className="w-6 h-6 mb-2" />
-                  <span className="font-medium">User</span>
-                  <span className="text-xs text-gray-400 mt-1">Regular Member</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserType("admin")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
-                    userType === "admin"
-                      ? "border-gwc-red bg-red-900/20"
-                      : "border-gwc-light-gray bg-gwc-black hover:border-gray-500"
-                  }`}
-                >
-                  <Shield className="w-6 h-6 mb-2" />
-                  <span className="font-medium">Admin</span>
-                  <span className="text-xs text-gray-400 mt-1">Staff/Manager</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Admin Code Input (only shown when admin is selected) */}
-            {userType === "admin" && (
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-300 block">
-                  Admin Access Code
-                </label>
-                <div className="relative">
-                  <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                  <input
-                    type="password"
-                    placeholder="Enter admin code"
-                    value={adminCode}
-                    onChange={(e) => setAdminCode(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500"
-                    required={userType === "admin"}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Contact GWC management for admin access code
-                </p>
-              </div>
-            )}
 
             {/* Submit Button */}
             <button
