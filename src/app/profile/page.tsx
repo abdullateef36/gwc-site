@@ -11,7 +11,7 @@ export default function ProfilePage() {
   const { user, loading } = useUser();
   const router = useRouter();
 
-  const [name, setName] = useState("");
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -28,7 +28,6 @@ export default function ProfilePage() {
       router.push("/login");
     }
     if (user) {
-      setName(user.displayName || "");
       setPhotoUrl(user.photoURL || null);
     }
   }, [user, loading, router]);
@@ -76,7 +75,6 @@ export default function ProfilePage() {
         const newData = {
           ...(parsed || {}),
           photoURL: uploadedUrl,
-          displayName: parsed?.displayName || name || (auth?.currentUser?.displayName || ""),
           email: parsed?.email || auth?.currentUser?.email || "",
         };
         localStorage.setItem("userData", JSON.stringify(newData));
@@ -114,7 +112,7 @@ export default function ProfilePage() {
       await deleteUser(auth.currentUser);
       localStorage.removeItem("authUser");
       localStorage.removeItem("userData");
-      localStorage.removeItem("displayName");
+      
       alert("Account deleted.");
       router.push("/");
     } catch (err: unknown) {
@@ -135,15 +133,12 @@ export default function ProfilePage() {
     try {
       setSaving(true);
       await updateProfile(auth.currentUser, {
-        displayName: name || undefined,
         photoURL: photoUrl || null,
       });
 
       // Update localStorage values used elsewhere in the app for instant UI
       try {
-        localStorage.setItem("displayName", name || "");
         const userData = {
-          displayName: name || "",
           email: auth.currentUser.email || "",
           photoURL: photoUrl || null,
         };
@@ -247,22 +242,16 @@ export default function ProfilePage() {
           </div>
 
         <div>
-          <p className="font-semibold">{user?.email}</p>
-          <p className="text-sm text-gray-400">Change your profile image and display name here.</p>
+          {user?.displayName ? (
+            <p className="font-semibold">{user.displayName}</p>
+          ) : null}
+          <p className="text-sm text-gray-400">{user?.email}</p>
+          <p className="text-sm text-gray-400">Change your profile image here.</p>
         </div>
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Display Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-transparent border border-gray-800 py-2 px-3 rounded"
-            placeholder="Your name"
-          />
-        </div>
-
+        
         <div>
           <label className="block text-sm font-medium mb-1">Profile Image</label>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
@@ -18,6 +18,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [nameChecking, setNameChecking] = useState(false);
+  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const router = useRouter();
 
   // Check if user is already logged in
@@ -29,13 +31,49 @@ export default function SignupPage() {
     
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is already logged in, redirect to home
         router.push("/");
       }
     });
     
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    const dbRef = db;
+    if (!dbRef) return;
+
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setNameAvailable(null);
+      setNameChecking(false);
+      return;
+    }
+
+    let cancelled = false;
+    setNameChecking(true);
+
+    const timeout = setTimeout(async () => {
+      try {
+        const nameLower = trimmed.toLowerCase();
+        const ref = doc(dbRef, "usernames", nameLower);
+        const snap = await getDoc(ref);
+
+        if (!cancelled) {
+          setNameAvailable(!snap.exists());
+        }
+      } catch (err) {
+        console.error("Error checking name:", err);
+        if (!cancelled) setNameAvailable(null);
+      } finally {
+        if (!cancelled) setNameChecking(false);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [name]);
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,6 +105,19 @@ export default function SignupPage() {
       return;
     }
 
+    // Check gamer name availability
+    if (nameAvailable === false) {
+      setError("This gamer name is already taken. Please choose another.");
+      setLoading(false);
+      return;
+    }
+
+    if (nameAvailable === null && name.trim()) {
+      setError("Still checking name availability... Please wait a moment.");
+      setLoading(false);
+      return;
+    }
+
     try {
       if (!auth) {
         throw new Error("Authentication service not available. Please try again later.");
@@ -78,7 +129,6 @@ export default function SignupPage() {
 
       console.log("Creating user...");
       
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -87,14 +137,13 @@ export default function SignupPage() {
       
       console.log("User created:", userCredential.user.uid);
 
-      // Update profile with name
       await updateProfile(userCredential.user, {
-        displayName: name,
+        displayName: name.trim(),
       });
       
       console.log("Profile updated");
 
-      // Store user data in Firestore
+      // Store user data in Firestore (NO displayNameLower)
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
         email: email.toLowerCase().trim(),
@@ -107,13 +156,11 @@ export default function SignupPage() {
       
       console.log("Firestore document created");
 
-      // Clear form
       setEmail("");
       setName("");
       setPassword("");
       setConfirmPassword("");
 
-      // Wait a moment for auth state to update
       setTimeout(() => {
         router.push("/");
       }, 100);
@@ -183,13 +230,13 @@ export default function SignupPage() {
             {/* Name Input */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-300 block">
-                Full Name
+                Gamers Name
               </label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Enter your full name"
+                  placeholder="Enter your unique gamers name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={loading}
@@ -197,6 +244,16 @@ export default function SignupPage() {
                   required
                 />
               </div>
+              {/* Name availability feedback */}
+              {nameChecking && (
+                <p className="text-sm text-gray-400">Checking availability...</p>
+              )}
+              {nameAvailable === true && !nameChecking && name.trim() && (
+                <p className="text-sm text-green-400">✓ This gamer name is available!</p>
+              )}
+              {nameAvailable === false && !nameChecking && (
+                <p className="text-sm text-red-400">✗ This gamer name is already taken.</p>
+              )}
             </div>
 
             {/* Email Input */}
@@ -284,7 +341,7 @@ export default function SignupPage() {
                   CREATING ACCOUNT...
                 </span>
               ) : (
-                "JOIN GWC"
+                "Join The Collective"
               )}
             </button>
 

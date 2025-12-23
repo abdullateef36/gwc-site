@@ -110,7 +110,11 @@ export default function Nav() {
                 <p className="text-xs text-gray-400">{user.email}</p>
               </div>
               {cachedPhotoURL || user.photoURL ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gwc-red">
+               <Link
+                  href="/profile"
+                  className="w-10 h-10 rounded-full overflow-hidden border-2 border-gwc-red cursor-pointer hover:opacity-90 transition"
+                  title="View profile"
+                >
                   <Image
                     src={cachedPhotoURL || (user.photoURL as string)}
                     alt={displayName}
@@ -118,7 +122,7 @@ export default function Nav() {
                     height={40}
                     className="w-full h-full object-cover"
                   />
-                </div>
+                </Link>
               ) : (
                 <div className="w-10 h-10 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold">
                   {displayName
