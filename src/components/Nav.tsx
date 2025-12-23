@@ -20,6 +20,7 @@ export default function Nav() {
     { name: "TOURNAMENTS", href: "/tournaments" },
     { name: "COMMUNITY", href: "/community" },
     { name: "SHOP", href: "/shop" },
+    { name: "PROFILE", href: "/profile" },
   ];
 
   const handleLogout = async () => {
@@ -42,6 +43,18 @@ export default function Nav() {
     user?.displayName ||
     (typeof window !== "undefined" ? localStorage.getItem("displayName") : "") ||
     "GWC User";
+
+  // Prefer cached userData photoURL for instant UI (updated on upload)
+  let cachedPhotoURL: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      const ud = localStorage.getItem("userData");
+      if (ud) {
+        const parsed = JSON.parse(ud);
+        cachedPhotoURL = parsed?.photoURL || null;
+      }
+    } catch {}
+  }
 
   // Cache display name when user is available
   useEffect(() => {
@@ -96,10 +109,10 @@ export default function Nav() {
                 <p className="font-semibold text-white">{displayName}</p>
                 <p className="text-xs text-gray-400">{user.email}</p>
               </div>
-              {user.photoURL ? (
+              {cachedPhotoURL || user.photoURL ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gwc-red">
                   <Image
-                    src={user.photoURL}
+                    src={cachedPhotoURL || (user.photoURL as string)}
                     alt={displayName}
                     width={40}
                     height={40}
@@ -151,10 +164,10 @@ export default function Nav() {
         <div className="md:hidden absolute top-full left-0 right-0 bg-gwc-black border-t border-gray-800 py-4 px-6 z-50">
           {/* User Info */}
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-800">
-            {user.photoURL ? (
+            {cachedPhotoURL || user.photoURL ? (
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gwc-red">
                 <Image
-                  src={user.photoURL}
+                  src={cachedPhotoURL || (user.photoURL as string)}
                   alt={displayName}
                   width={48}
                   height={48}

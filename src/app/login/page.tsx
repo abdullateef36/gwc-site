@@ -4,7 +4,7 @@ import { useState } from "react";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, Shield } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -128,12 +128,6 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-            </div>
-
-            {/* Admin Login Note */}
-            <div className="flex items-center gap-2 text-sm text-gray-400 bg-gwc-black/50 p-3 rounded-lg">
-              <Shield className="w-4 h-4" />
-              <span>Admin users: Use your admin credentials</span>
             </div>
 
             {/* Submit Button */}
