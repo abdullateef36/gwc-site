@@ -11,6 +11,7 @@ import Link from "next/link";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -143,11 +144,12 @@ export default function SignupPage() {
       
       console.log("Profile updated");
 
-      // Store user data in Firestore (NO displayNameLower)
+      // Store user data in Firestore (include full name)
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
         email: email.toLowerCase().trim(),
         displayName: name.trim(),
+        fullName: fullName.trim(),
         role: "user",
         createdAt: new Date().toISOString(),
         photoURL: null,
@@ -157,6 +159,7 @@ export default function SignupPage() {
       console.log("Firestore document created");
 
       setEmail("");
+      setFullName("");
       setName("");
       setPassword("");
       setConfirmPassword("");
@@ -226,6 +229,25 @@ export default function SignupPage() {
                 <p className="text-sm">{error}</p>
               </div>
             )}
+
+            {/* Full Name Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-300 block">
+                Full Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3.5 bg-gwc-black border-2 border-gwc-light-gray rounded-lg focus:border-gwc-red focus:outline-none transition-colors text-white placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  required
+                />
+              </div>
+            </div>
 
             {/* Name Input */}
             <div className="space-y-2">
