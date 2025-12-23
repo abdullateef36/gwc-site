@@ -124,14 +124,18 @@ export default function Nav() {
                   />
                 </Link>
               ) : (
-                <div className="w-10 h-10 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold">
+                <Link
+                  href="/profile"
+                  className="w-10 h-10 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-90 transition"
+                  title="View profile"
+                >
                   {displayName
                     .split(" ")
                     .map((n) => n[0])
                     .join("")
                     .toUpperCase()
                     .substring(0, 2)}
-                </div>
+                </Link>
               )}
               <button
                 onClick={handleLogout}
@@ -179,14 +183,17 @@ export default function Nav() {
                 />
               </div>
             ) : (
-              <div className="w-12 h-12 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold text-lg">
+              <Link
+                href="/profile"
+                className="w-12 h-12 bg-gwc-red rounded-full flex items-center justify-center text-white font-bold text-lg cursor-pointer hover:opacity-90 transition"
+              >
                 {displayName
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
                   .toUpperCase()
                   .substring(0, 2)}
-              </div>
+              </Link>
             )}
             <div>
               <p className="font-semibold text-white">{displayName}</p>
