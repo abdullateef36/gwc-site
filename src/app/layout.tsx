@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Gamers World Collective',
   description: 'Unifying the global gaming community',
+  icons: {
+    icon: '/gwc_icon.png',
+    shortcut: '/gwc_icon.png',
+    apple: '/gwc_icon.png',
+  },
 }
 
 export default function RootLayout({

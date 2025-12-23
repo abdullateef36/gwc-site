@@ -6,6 +6,8 @@ import { useUser } from "@/context/UserContext";
 import { auth } from "@/lib/firebase";
 import { updateProfile, signOut as firebaseSignOut, deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 import { uploadImage } from "@/lib/cloudinary";
+import { deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ProfilePage() {
   const { user, loading } = useUser();
@@ -90,43 +92,64 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!auth || !auth.currentUser) return alert("No authenticated user.");
+ const handleDeleteAccount = async () => {
+  if (!auth || !auth.currentUser || !db) {
+    alert("No authenticated user.");
+    return;
+  }
 
-    const confirmed = confirm("Delete your account? This is irreversible.");
-    if (!confirmed) return;
+  const confirmed = confirm("Delete your account? This is irreversible.");
+  if (!confirmed) return;
 
-    try {
-      // If user signed in with password, prompt to re-enter password for recent auth
-      const providers = auth.currentUser.providerData || [];
-      const hasPasswordProvider = providers.some((p) => p?.providerId === "password");
+  try {
+    const currentUser = auth.currentUser;
+    const uid = currentUser.uid;
+    const displayName = currentUser.displayName || "";
+    const nameLower = displayName.toLowerCase();
 
-      if (hasPasswordProvider) {
-        const email = auth.currentUser.email || "";
-        const pw = prompt("Please enter your password to confirm account deletion:");
-        if (!pw) return alert("Password required to delete account.");
-        const credential = EmailAuthProvider.credential(email, pw);
-        await reauthenticateWithCredential(auth.currentUser, credential);
+    const providers = currentUser.providerData || [];
+    const hasPasswordProvider = providers.some(
+      (p) => p?.providerId === "password"
+    );
+
+    if (hasPasswordProvider) {
+      const email = currentUser.email || "";
+      const pw = prompt("Please enter your password to confirm account deletion:");
+      if (!pw) {
+        alert("Password required.");
+        return;
       }
-
-      await deleteUser(auth.currentUser);
-      localStorage.removeItem("authUser");
-      localStorage.removeItem("userData");
-      
-      alert("Account deleted.");
-      router.push("/");
-    } catch (err: unknown) {
-      console.error("Delete account error:", err);
-      // handle Firebase error codes if present
-      const code = (err && typeof err === "object" && "code" in err) ? (err as { code?: string }).code : undefined;
-      if (code === "auth/requires-recent-login") {
-        alert("You must sign in again before deleting your account. Please sign out and sign in, then try again.");
-      } else {
-        const m = err instanceof Error ? err.message : String(err);
-        alert(`Failed to delete account: ${m}`);
-      }
+      const credential = EmailAuthProvider.credential(email, pw);
+      await reauthenticateWithCredential(currentUser, credential);
     }
-  };
+
+    await deleteDoc(doc(db, "users", uid));
+    await deleteDoc(doc(db, "usernames", nameLower));
+
+    await deleteUser(currentUser);
+
+    localStorage.removeItem("authUser");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("displayName");
+
+    alert("Account deleted successfully.");
+    router.push("/");
+  } catch (err: unknown) {
+    console.error("Delete account error:", err);
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? (err as { code?: string }).code
+        : undefined;
+
+    if (code === "auth/requires-recent-login") {
+      alert("Please sign in again and retry.");
+    } else {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`Failed to delete account: ${msg}`);
+    }
+  }
+};
+
 
   const handleSave = async () => {
     if (!auth || !auth.currentUser) return alert("No authenticated user.");
