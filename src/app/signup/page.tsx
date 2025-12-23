@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
@@ -56,7 +56,7 @@ export default function SignupPage() {
     const timeout = setTimeout(async () => {
       try {
         const nameLower = trimmed.toLowerCase();
-        const ref = doc(dbRef, "usernames", nameLower);
+        const ref = doc(dbRef!, "usernames", nameLower);
         const snap = await getDoc(ref);
 
         if (!cancelled) {
@@ -144,19 +144,38 @@ export default function SignupPage() {
       
       console.log("Profile updated");
 
-      // Store user data in Firestore (include full name)
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        email: email.toLowerCase().trim(),
-        displayName: name.trim(),
-        fullName: fullName.trim(),
-        role: "user",
-        createdAt: new Date().toISOString(),
-        photoURL: null,
-        isAdmin: false,
+      // Atomically write both `users` and `usernames` to avoid races
+      const nameLower = name.trim().toLowerCase();
+      await runTransaction(db!, async (transaction) => {
+        const usernameRef = doc(db!, "usernames", nameLower);
+        const usernameSnap = await transaction.get(usernameRef);
+
+        if (usernameSnap.exists()) {
+          throw new Error("username-already-exists");
+        }
+
+        const userRef = doc(db!, "users", userCredential.user.uid);
+
+        transaction.set(userRef, {
+          uid: userCredential.user.uid,
+          email: email.toLowerCase().trim(),
+          displayName: name.trim(),
+          fullName: fullName.trim(),
+          role: "user",
+          createdAt: serverTimestamp(),
+          photoURL: null,
+          isAdmin: false,
+        });
+
+        transaction.set(usernameRef, {
+          uid: userCredential.user.uid,
+          displayName: name.trim(),
+          displayNameLowercase: nameLower,
+          createdAt: serverTimestamp(),
+        });
       });
-      
-      console.log("Firestore document created");
+
+      console.log("Firestore documents for user and username created");
 
       setEmail("");
       setFullName("");
