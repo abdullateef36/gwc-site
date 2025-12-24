@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Scoreboards from "@/components/scoreboards/Scoreboards";
 
 export default function Home() {
   const slides = [
@@ -163,22 +164,7 @@ export default function Home() {
       </section>
 
       {/* Leaderboard */}
-      <section className="container mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-8">LIVE LEADERBOARD</h2>
-        <div className="bg-gray-900 rounded-xl p-8 shadow-md">
-          <ul>
-            {["Victory", "Phoenix", "Raptors", "Legends", "Destroyers"].map((team, i) => (
-              <li key={i} className="flex justify-between py-4 border-b border-gray-800 last:border-b-0">
-                <div className="flex items-center gap-6">
-                  <span className="w-8 text-gray-400 font-bold text-xl">{i + 1}</span>
-                  <span className="text-xl">{team}</span>
-                </div>
-                <div className="text-gray-200 font-bold text-xl">{(5 - i) * 700}</div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <Scoreboards />
 
       {/* Upcoming Events */}
       <section className="container mx-auto px-6 py-16">

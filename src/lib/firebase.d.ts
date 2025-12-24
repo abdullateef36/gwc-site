@@ -3,7 +3,7 @@ declare module "@/lib/firebase" {
 	import type { Auth } from 'firebase/auth';
 	import type { FirebaseApp } from 'firebase/app';
 
-	export const db: Firestore | undefined;
+	export const db: Firestore;
 	export const auth: Auth | undefined;
 	export const app: FirebaseApp | undefined;
 }
