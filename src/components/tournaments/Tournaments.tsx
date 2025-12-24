@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useTournaments } from "@/hooks/useTournaments";
-import TournamentCard from "@/components/tournaments/TournamentCard";
-import CreateTournament from "@/components/tournaments/CreateTournament";
+import TournamentCard from "./TournamentCard";
+import CreateTournament from "./CreateTournament";
 import { useUser } from "@/context/UserContext";
 import { TournamentStatus } from "@/lib/tournaments";
 
