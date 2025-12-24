@@ -15,15 +15,17 @@ export default function CreateTournament({ user }: Props) {
   const [date, setDate] = useState("");
   const [prize, setPrize] = useState("");
   const [image, setImage] = useState("");
+  const [description, setDescription] = useState("");
 
   const addTournament = async () => {
-    if (!title || !date || !prize || !image) return;
+    if (!title || !date || !prize || !image || !description) return;
 
     await addDoc(collection(db, "tournaments"), {
       title,
       date,
       prize,
       image,
+      description,
       status: "upcoming",
       createdBy: user.uid,
       createdAt: serverTimestamp(),
@@ -33,6 +35,7 @@ export default function CreateTournament({ user }: Props) {
     setDate("");
     setPrize("");
     setImage("");
+    setDescription("");
   };
 
   return (
@@ -56,7 +59,7 @@ export default function CreateTournament({ user }: Props) {
           value={date}
           onChange={(e) => setDate(e.target.value)}
           placeholder="Date (e.g., Nov 18, 2025)"
-          className="w-full p-3 rounded-lg bg-[#0d0d0d] border border-gwc-light-gray focus:border-gwc-red focus:outline-none focus:ring-2 focus:ring-gwc-red/50ransition-all text-white placeholder-gray-500"
+          className="w-full p-3 rounded-lg bg-[#0d0d0d] border border-gwc-light-gray focus:border-gwc-red focus:outline-none focus:ring-2 focus:ring-gwc-red/50 transition-all text-white placeholder-gray-500"
         />
 
         <input
@@ -71,6 +74,14 @@ export default function CreateTournament({ user }: Props) {
           onChange={(e) => setImage(e.target.value)}
           placeholder="Image URL"
           className="w-full p-3 rounded-lg bg-[#0d0d0d] border border-gwc-light-gray focus:border-gwc-red focus:outline-none focus:ring-2 focus:ring-gwc-red/50 transition-all text-white placeholder-gray-500"
+        />
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Tournament description (rules, format, requirements, etc.)"
+          rows={4}
+          className="w-full p-3 rounded-lg bg-[#0d0d0d] border border-gwc-light-gray focus:border-gwc-red focus:outline-none focus:ring-2 focus:ring-gwc-red/50 transition-all text-white placeholder-gray-500 resize-none"
         />
       </div>
 

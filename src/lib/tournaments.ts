@@ -8,6 +8,7 @@ export interface Tournament {
   date: string;
   prize: string;
   image: string;
+  description: string;
   status: TournamentStatus;
   createdBy: string;
   createdAt: Timestamp;

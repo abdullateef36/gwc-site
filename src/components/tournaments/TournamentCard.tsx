@@ -6,6 +6,7 @@ import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Tournament, TournamentStatus } from "@/lib/tournaments";
 import { Trash2, MoveRight, MoveLeft } from "lucide-react";
+import { useState } from "react";
 
 interface Props {
   tournament: Tournament;
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export default function TournamentCard({ tournament, isAdmin }: Props) {
+    const [open, setOpen] = useState(false);
+
   const remove = async () => {
     if (confirm("Are you sure you want to delete this tournament?")) {
       await deleteDoc(doc(db, "tournaments", tournament.id));
@@ -84,6 +87,21 @@ export default function TournamentCard({ tournament, isAdmin }: Props) {
         <h3 className="font-semibold text-lg text-white mb-3">{tournament.title}</h3>
         <p className="text-gray-400 mb-1">Date: {tournament.date}</p>
         <p className="text-gray-400 mb-4">Prize Pool: {tournament.prize}</p>
+
+        {tournament.description && (
+        <div className="mb-4 p-3 bg-[#0d0d0d] rounded-lg border border-gwc-light-gray">
+            <p className="text-sm text-gray-300 line-clamp-3">
+            {tournament.description}
+            </p>
+
+            <button
+            onClick={() => setOpen(true)}
+            className="mt-2 text-sm text-gwc-red hover:underline"
+            >
+            See more
+            </button>
+        </div>
+        )}
         
         {tournament.status !== "completed" && (
           <Link
@@ -107,6 +125,34 @@ export default function TournamentCard({ tournament, isAdmin }: Props) {
           </div>
         )}
       </div>
+      {open && (
+  <div
+  className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+  onClick={() => setOpen(false)}>
+   <div
+  className="bg-[#0b0b0b] max-w-lg w-full rounded-2xl border border-gwc-light-gray p-6 relative
+           animate-in fade-in zoom-in-95 duration-200"
+           onClick={(e) => e.stopPropagation()}>
+      {/* Close button */}
+      <button
+        onClick={() => setOpen(false)}
+        className="absolute top-4 right-4 text-gray-400 hover:text-white"
+      >
+        ✕
+      </button>
+
+      <h3 className="text-xl font-semibold text-white mb-4">
+        {tournament.title}
+      </h3>
+
+      <div className="max-h-[60vh] overflow-y-auto pr-2">
+        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+          {tournament.description}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
