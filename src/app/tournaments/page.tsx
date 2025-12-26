@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTournaments } from "@/hooks/useTournaments";
 import TournamentCard from "@/components/tournaments/TournamentCard";
 import CreateTournament from "@/components/tournaments/CreateTournament";
+import TournamentRankings from "@/components/TournamentsScoreboards/TournamentRankings";
 import { useUser } from "@/context/UserContext";
 import { TournamentStatus } from "@/lib/tournaments";
 
@@ -89,6 +90,11 @@ export default function Tournaments() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Tournament Rankings always visible */}
+      <div className="mt-12">
+        <TournamentRankings />
       </div>
     </div>
   );
