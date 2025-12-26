@@ -1,4 +1,3 @@
-// components/TournamentsScoreboards/TournamentRankingsCard.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,26 +5,38 @@ import { deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { TournamentRanking, RankingEntry } from "@/lib/rankings";
 import { Trash2, Plus, Minus } from "lucide-react";
+import { v4 as uuidv4 } from "uuid"; 
 
-export default function TournamentRankingsCard({
-  ranking,
-  isAdmin,
-}: {
+interface Props {
   ranking: TournamentRanking;
   isAdmin: boolean;
-}) {
-  const [rankings, setRankings] = useState<RankingEntry[]>(ranking.rankings);
+}
 
-  const updateTeam = async (index: number, field: "points" | "wins" | "losses", delta: number) => {
-    const newRankings = [...rankings];
-    if (field === "points") newRankings[index].points = Math.max(0, newRankings[index].points + delta);
-    if (field === "wins") newRankings[index].wins = Math.max(0, newRankings[index].wins + delta);
-    if (field === "losses") newRankings[index].losses = Math.max(0, newRankings[index].losses + delta);
+export default function TournamentRankingsCard({ ranking, isAdmin }: Props) {
+  // Add unique IDs to entries if they don't exist
+  const [rankings, setRankings] = useState<RankingEntryWithId[]>(
+    ranking.rankings.map((entry) => ({ ...entry, id: uuidv4() }))
+  );
+
+  type RankingEntryWithId = RankingEntry & { id: string };
+
+  const updateTeam = async (
+    id: string,
+    field: "points" | "wins" | "losses",
+    delta: number
+  ) => {
+    const newRankings = rankings.map((entry) => {
+      if (entry.id !== id) return entry;
+      return {
+        ...entry,
+        [field]: Math.max(0, entry[field] + delta),
+      };
+    });
 
     setRankings(newRankings);
 
     await updateDoc(doc(db, "tournamentRankings", ranking.id), {
-      rankings: newRankings,
+      rankings: newRankings.map(({ ...rest }) => rest), // Remove local id before saving
       lastUpdated: serverTimestamp(),
     });
   };
@@ -80,7 +91,7 @@ export default function TournamentRankingsCard({
           <tbody>
             {sortedRankings.map((entry, i) => (
               <tr
-                key={i}
+                key={entry.id}
                 className="border-b border-gwc-light-gray/30 py-4 hover:bg-[#0d0d0d] transition-all"
               >
                 <td className="py-4 pr-4 font-bold text-xl text-gwc-red">{i + 1}</td>
@@ -89,7 +100,7 @@ export default function TournamentRankingsCard({
                   <div className="flex items-center justify-center gap-2">
                     {isAdmin && (
                       <button
-                        onClick={() => updateTeam(i, "points", -1)}
+                        onClick={() => updateTeam(entry.id, "points", -1)}
                         className="p-1 rounded bg-gwc-red/10 hover:bg-gwc-red/20"
                       >
                         <Minus size={16} />
@@ -98,7 +109,7 @@ export default function TournamentRankingsCard({
                     <span className="font-bold text-2xl text-gwc-red min-w-12">{entry.points}</span>
                     {isAdmin && (
                       <button
-                        onClick={() => updateTeam(i, "points", 1)}
+                        onClick={() => updateTeam(entry.id, "points", 1)}
                         className="p-1 rounded bg-gwc-red/10 hover:bg-gwc-red/20"
                       >
                         <Plus size={16} />
@@ -110,7 +121,7 @@ export default function TournamentRankingsCard({
                   <div className="flex items-center justify-center gap-2">
                     {isAdmin && (
                       <button
-                        onClick={() => updateTeam(i, "wins", -1)}
+                        onClick={() => updateTeam(entry.id, "wins", -1)}
                         className="p-1 rounded bg-gwc-red/10 hover:bg-gwc-red/20"
                       >
                         <Minus size={16} />
@@ -119,7 +130,7 @@ export default function TournamentRankingsCard({
                     <span className="font-bold text-xl">{entry.wins}</span>
                     {isAdmin && (
                       <button
-                        onClick={() => updateTeam(i, "wins", 1)}
+                        onClick={() => updateTeam(entry.id, "wins", 1)}
                         className="p-1 rounded bg-gwc-red/10 hover:bg-gwc-red/20"
                       >
                         <Plus size={16} />
@@ -131,7 +142,7 @@ export default function TournamentRankingsCard({
                   <div className="flex items-center justify-center gap-2">
                     {isAdmin && (
                       <button
-                        onClick={() => updateTeam(i, "losses", -1)}
+                        onClick={() => updateTeam(entry.id, "losses", -1)}
                         className="p-1 rounded bg-gwc-red/10 hover:bg-gwc-red/20"
                       >
                         <Minus size={16} />
@@ -140,7 +151,7 @@ export default function TournamentRankingsCard({
                     <span className="font-bold text-xl">{entry.losses}</span>
                     {isAdmin && (
                       <button
-                        onClick={() => updateTeam(i, "losses", 1)}
+                        onClick={() => updateTeam(entry.id, "losses", 1)}
                         className="p-1 rounded bg-gwc-red/10 hover:bg-gwc-red/20"
                       >
                         <Plus size={16} />

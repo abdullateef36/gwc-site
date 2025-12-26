@@ -19,6 +19,7 @@ export default function Nav() {
     { name: "HOME", href: "/" },
     { name: "TOURNAMENTS", href: "/tournaments" },
     { name: "COMMUNITY", href: "/community" },
+    { name: "BLOG", href: "/blog" },
     { name: "SHOP", href: "/shop" },
     { name: "PROFILE", href: "/profile" },
   ];

@@ -32,7 +32,6 @@ export default function CreateTournamentRanking({ user }: Props) {
       const docRef = await addDoc(collection(db, "tournamentRankings"), {
         title: tournamentTitle,
         rankings: teams.map((t) => ({
-          position: 0, // calculated on display
           teamName: t.teamName,
           points: t.points,
           wins: t.wins,
